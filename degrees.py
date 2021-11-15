@@ -1,7 +1,6 @@
 import csv
 import sys
-
-from util import Node, StackFrontier, QueueFrontier
+from newUtils import *
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -83,6 +82,27 @@ def main():
             movie = movies[path[i + 1][0]]["title"]
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
+def cog(queue, i, target):
+    array = queue.frontier[i]
+    tmp = []
+    person = array[-1][1]
+    theMovies = people[person]["movies"]
+
+    for movie in theMovies:
+        if movie not in queue.moviesExplored:
+            coStars = movies[movie]["stars"]
+            if target in coStars:
+                # link found
+                return True, array + [(movie, target)]
+            
+            queue.addMovie(movie)
+
+            for coStar in coStars:
+                if coStar not in queue.personsExplored:
+                    queue.addPerson(coStar)
+                    tmp += [array + [(movie, coStar)]]
+
+    return False, tmp
 
 def shortest_path(source, target):
     """
@@ -91,9 +111,29 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
+    newFrontier = []
+    queue = Queue()
+    queue.newFrontier([[(None, source)]])
+    frontierLength = 1
+    i = 0
 
-    # TODO
-    raise NotImplementedError
+    while i < frontierLength:
+        stop, arr = cog(queue, i, target)
+
+        if stop:
+            return arr[1:]
+        
+        newFrontier += arr
+
+        if i == frontierLength - 1 and newFrontier:
+            i = 0
+            frontierLength = len(newFrontier)
+            queue.newFrontier(newFrontier)
+            newFrontier = []
+        else:
+            i += 1
+
+    return None
 
 
 def person_id_for_name(name):
